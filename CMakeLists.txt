@@ -1,4 +1,7 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.10)
+
+SET("OpenCV_DIR" "/home/marcel/build")
+find_library(PATH ${OpenCV_DIR})
 
 set(CMAKE_FIND_PACKAGE_SORT_ORDER NATURAL)
 find_package(OpenCV REQUIRED)
@@ -7,7 +10,7 @@ find_package(OpenMP)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
 if (CMAKE_COMPILER_IS_GNUCXX)
-	set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -Wall -msse4.1")
+	set(CMAKE_CXX_FLAGS "-std=c++17 -O3 -Wall -msse4.1")
 endif (CMAKE_COMPILER_IS_GNUCXX)
 
 if (OPENMP_FOUND)

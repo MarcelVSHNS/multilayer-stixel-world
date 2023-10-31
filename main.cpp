@@ -1,6 +1,11 @@
 #include <iostream>
+#include <fstream>
+#include <filesystem>
 #include <chrono>
+#include <unistd.h>
+#include <string>
 
+#include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
@@ -49,6 +54,37 @@ static cv::Scalar dispToColor(float disp, float maxdisp = 64, float offset = 0)
 	return computeColor(std::min(disp + offset, maxdisp) / maxdisp);
 }
 
+void writeStixelsToCSV(const std::string &filename, const std::string &output_path, const std::vector<Stixel> &stixels) {
+    std::ofstream file(output_path + filename + ".csv");
+    std::string image_path = "testing/STEREO_LEFT/";
+    float baseline = 0.2122111542368276;
+    float focal = 6.0;
+    if (!file.is_open()) {
+        std::cerr << "Fail to load .csv file for stixel: " << filename << std::endl;
+        return;
+    }
+    // header
+    file << "img_path,x,y,class,depth,y_top\n";
+    std::string class_num = "0";
+
+    // write stixel by stixel u means col, v means row
+    for (const auto &stixel : stixels) {
+        int x = (stixel.u / 8) * 8;
+        int y = (stixel.vB / 8) * 8;
+        float dist = 0.0;
+        if (stixel.disp != 0.0) {
+            dist = baseline * focal / stixel.disp;
+        }
+        file << image_path << filename << ".png" << ","
+             << x << ","         // col
+             << y << ","        // row-bottom
+             << class_num << ","     // class
+             << dist << ","     // disparity
+             << stixel.vT << "\n";       // row-top
+    }
+    file.close();
+}
+
 static void drawStixel(cv::Mat& img, const Stixel& stixel, cv::Scalar color)
 {
 	const int radius = std::max(stixel.width / 2, 1);
@@ -93,20 +129,41 @@ private:
 	cv::Ptr<SemiGlobalMatching> sgm_;
 };
 
-int main(int argc, char* argv[])
-{
-	if (argc < 4)
-	{
-		std::cout << "usage: " << argv[0] << " left-image-format right-image-format camera.xml" << std::endl;
-		return -1;
-	}
+int main(int argc, char* argv[]) {
+    if (chdir("../") != 0) {
+        perror("chdir");
+        return -1;
+    }
+    char cwd[1024];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        std::cout << "Current working dir: " << cwd << std::endl;
+    } else {
+        perror("getcwd() error");
+        return -1;
+    }
+
+    // std::string config_file = "config.yaml";
+    // cv::FileStorage config(config_file, cv::FileStorage::READ);
+    // if (!config.isOpened()) {
+    //     std::cerr << "Unable to open " << config_file << std::endl;
+    //     return -1;
+    // }
+    std::string left_img_path, right_img_path, calib_file, output_path, phase;
+
+    left_img_path = "/home/marcel/datasets/ameise_okt23/validation/STEREO_LEFT/";
+    right_img_path = "/home/marcel/datasets/ameise_okt23/validation/STEREO_RIGHT/";
+    calib_file = "ameise.xml";
+    output_path = "/home/marcel/datasets/ameise_okt23/validation/targets_from_stereo/";
+    phase = "testing";
+    //config.release();
 
 	// stereo SGBM
 	const int numDisparities = 128;
 	SGMWrapper sgm(numDisparities);
 
 	// read camera parameters
-	const cv::FileStorage fs(argv[3], cv::FileStorage::READ);
+    std::string calib_base_path = "calibration/";
+	const cv::FileStorage fs(calib_base_path + calib_file, cv::FileStorage::READ);
 	CV_Assert(fs.isOpened());
 
 	// input parameters
@@ -123,10 +180,19 @@ int main(int argc, char* argv[])
 	cv::Mat disparity;
 	MultiLayerStixelWorld stixelWorld(param);
 
-	for (int frameno = 1;; frameno++)
-	{
-		cv::Mat I1 = cv::imread(cv::format(argv[1], frameno), cv::IMREAD_UNCHANGED);
-		cv::Mat I2 = cv::imread(cv::format(argv[2], frameno), cv::IMREAD_UNCHANGED);
+    std::vector<std::string> pngFiles;
+    for (const auto &entry : std::filesystem::directory_iterator(left_img_path)) {
+        if (entry.path().extension() == ".png") {
+            pngFiles.push_back(entry.path().stem().string());
+        }
+    }
+    std::cout << pngFiles.size() << " files found!" << std::endl;
+
+	for (const auto& filename : pngFiles) {
+		// e.g. left/frame_num_%09d.pgm
+        // frame_81_id00101-id00151_1696953358541433071-1696953363441302825-22-1.png
+		cv::Mat I1 = cv::imread(left_img_path + filename + ".png", cv::IMREAD_GRAYSCALE);
+		cv::Mat I2 = cv::imread(right_img_path + filename + ".png", cv::IMREAD_GRAYSCALE);
 
 		if (I1.empty() || I2.empty())
 		{
@@ -181,14 +247,20 @@ int main(int argc, char* argv[])
 		for (const auto& stixel : stixels)
 			drawStixel(stixelImg, stixel, dispToColor(stixel.disp));
 		cv::addWeighted(draw, 1, stixelImg, 0.5, 0, draw);
-
-		cv::imshow("disparity", disparityColor);
-		cv::imshow("stixels", draw);
-
-		const char c = cv::waitKey(1);
-		if (c == 27)
-			break;
-		if (c == 'p')
-			cv::waitKey(0);
+		// write to csv
+		writeStixelsToCSV(filename, output_path, stixels);
+		// highGUI with opencv
+		// cv::imshow("disparity", disparityColor);
+		// cv::imshow("stixels", draw);
+		//cv::imwrite("disparity.png", disparityColor);
+		//cv::imwrite(output_path + "proof/" + filename + "_stixel.png", draw);
+		std::cout << filename << " finished." << std::endl;
+		
+		// const char c = cv::waitKey(1);
+		// if (c == 27)
+		// 	break;
+		// if (c == 'p')
+		// 	cv::waitKey(0);
 	}
+    return 0;
 }

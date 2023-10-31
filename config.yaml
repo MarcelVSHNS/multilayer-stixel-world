@@ -1,0 +1,4 @@
+left_img_folder: /home/marcel/datasets/ameise_okt23/testing/STEREO_LEFT/
+right_img_folder: /home/marcel/datasets/ameise_okt23/testing/STEREO_RIGHT/
+calib_file: ameise.xml
+output_path: /home/marcel/datasets/ameise_okt23/testing/targets_from_stereo/
