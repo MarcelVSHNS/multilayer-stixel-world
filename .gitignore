@@ -46,6 +46,6 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-build/*
+build
 cmake-build-default
 .idea

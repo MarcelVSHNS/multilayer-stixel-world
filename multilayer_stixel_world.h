@@ -107,7 +107,7 @@ public:
 		Parameters()
 		{
 			// stixel width
-			stixelWidth = 7;
+			stixelWidth = 8;
 
 			// disparity range
 			dmin = 0;
