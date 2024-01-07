@@ -64,23 +64,26 @@ void writeStixelsToCSV(const std::string &filename, const std::string &output_pa
         return;
     }
     // header
-    file << "img_path,x,y,class,depth,y_top\n";
-    std::string class_num = "0";
+    // file << "img_path,x,y,class,depth,y_top\n";
+    file << "img_path,x,yT,yB,class,depth\n";
+    std::string class_num = "-1";
 
     // write stixel by stixel u means col, v means row
     for (const auto &stixel : stixels) {
-        int x = (stixel.u / 8) * 8;
-        int y = (stixel.vB / 8) * 8;
+        int grid_step = 8;
+        int x = (stixel.u / grid_step) * grid_step;
+        int yT = (stixel.vT / grid_step) * grid_step;
+        int yB = (stixel.vB / grid_step) * grid_step;
         float dist = 0.0;
         if (stixel.disp != 0.0) {
             dist = baseline * focal / stixel.disp;
         }
         file << image_path << filename << ".png" << ","
-             << x << ","         // col
-             << y << ","        // row-bottom
-             << class_num << ","     // class
-             << dist << ","     // disparity
-             << stixel.vT << "\n";       // row-top
+             << x << ","                // col
+             << yT << ","               // row-Top
+             << yB << ","               // row-Bottom
+             << class_num << ","        // class
+             << dist << "\n";             // disparity
     }
     file.close();
 }
@@ -150,10 +153,10 @@ int main(int argc, char* argv[]) {
     // }
     std::string left_img_path, right_img_path, calib_file, output_path, phase;
 
-    left_img_path = "/home/marcel/datasets/ameise_okt23/validation/STEREO_LEFT/";
-    right_img_path = "/home/marcel/datasets/ameise_okt23/validation/STEREO_RIGHT/";
+    left_img_path = "/home/marcel/datasets/ameise-dataset/testing/STEREO_LEFT/";
+    right_img_path = "/home/marcel/datasets/ameise-dataset/testing/STEREO_RIGHT/";
     calib_file = "ameise.xml";
-    output_path = "/home/marcel/datasets/ameise_okt23/validation/targets_from_stereo/";
+    output_path = "/home/marcel/datasets/ameise-dataset/testing/predictions_from_stereo/";
     phase = "testing";
     //config.release();
 
@@ -252,8 +255,8 @@ int main(int argc, char* argv[]) {
 		// highGUI with opencv
 		// cv::imshow("disparity", disparityColor);
 		// cv::imshow("stixels", draw);
-		//cv::imwrite("disparity.png", disparityColor);
-		//cv::imwrite(output_path + "proof/" + filename + "_stixel.png", draw);
+		cv::imwrite(output_path + "disparities/" + filename + "_disparity.png", disparityColor);
+		cv::imwrite(output_path + "stixels/" + filename + "_stixel.png", draw);
 		std::cout << filename << " finished." << std::endl;
 		
 		// const char c = cv::waitKey(1);
