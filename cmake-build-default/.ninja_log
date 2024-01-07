@@ -1,9 +1,0 @@
-# ninja log v5
-1	3028	1698222844354916285	CMakeFiles/stixelworld.dir/main.cpp.o	ebf6b0beb31d3215
-3028	3344	1698222844670915943	stixelworld	ab7e3ac7d4b4d613
-1	1570	1698047293189701108	CMakeFiles/stixelworld.dir/semi_global_matching.cpp.o	dac38c03145c29ca
-1	2720	1698047294337703761	CMakeFiles/stixelworld.dir/multilayer_stixel_world.cpp.o	6b0ce5e86a0d40cd
-2	2342	1704652129097015543	CMakeFiles/stixelworld.dir/semi_global_matching.cpp.o	dac38c03145c29ca
-2	3833	1704652130585023217	CMakeFiles/stixelworld.dir/main.cpp.o	ebf6b0beb31d3215
-2	4012	1704652130769024164	CMakeFiles/stixelworld.dir/multilayer_stixel_world.cpp.o	6b0ce5e86a0d40cd
-4012	4198	1704652130953025112	stixelworld	ab7e3ac7d4b4d613
